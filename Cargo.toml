@@ -17,3 +17,16 @@ entropy = "0.4.1"
 lazy_static = "1.4.0"
 metrics-exporter-prometheus = "0.5.0"
 metrics = "0.16.0"
+
+[package.metadata.deb]
+maintainer = "Serge Smertin <serg.smertin@gmail.com>"
+copyright = "2021, Serge Smertin <serg.smertin@gmail.com>"
+license-file = ["LICENSE", "2"]
+extended-description = """\
+Simple Prometheus Linux process tree detector"""
+depends = "$auto"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/prom-cnproc", "sbin", "755"],
+]

@@ -29,3 +29,7 @@ Main logic depends on [cnproc](https://crates.io/crates/cnproc) Rust crate. All 
 
 Building - `cargo build --release`
 
+Releasing:
+
+- `cargo deb --target=aarch64-unknown-linux-gnu	`
+- `cargo deb --target=x86_64-unknown-linux-gnu`

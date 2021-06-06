@@ -86,7 +86,7 @@ impl Watcher {
         let tree = self.chain(pid);
         gauge!("process", 1.0, "tree" => tree.clone(), "state" => "RUNNING");
         gauge!("process", 0., "tree" => tree.clone(), "state" => "STOPPED");
-        trace!("started pid={} tree={}", pid, tree)
+        debug!("started pid={} tree={}", pid, tree)
     }
 
     fn stop(&mut self, pid: i32) {
@@ -102,8 +102,7 @@ impl Watcher {
         gauge!("process", 0., "tree" => tree.clone(), "state" => "RUNNING");
         gauge!("process", 1., "tree" => tree.clone(), "state" => "STOPPED");
         histogram!("process_seconds", seconds, "tree" => tree.clone());
-
-        trace!("stopped pid={} tree={} duration={:?}", pid, tree, elapsed);
+        debug!("stopped pid={} tree={} duration={:?}", pid, tree, elapsed);
     }
 
     pub fn main_loop(&mut self) -> ! {
