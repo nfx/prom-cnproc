@@ -96,6 +96,11 @@ impl Process {
         Ok(Process{pid, ppid, argv, exe, start}) 
     }
 
+    #[cfg(test)]
+    pub fn from(pid: i32, ppid: i32, exe: &str, argv: Vec<String>) -> Self {
+        Self {pid, ppid, exe: PathBuf::from(exe), argv, start: Instant::now()}
+    }
+
     /// Returns minimum metric entropy of any path element
     pub fn entropy(&self) -> f32 {
         let mut path_entropy = std::f32::MAX;
