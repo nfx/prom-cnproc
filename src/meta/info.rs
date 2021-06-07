@@ -99,3 +99,50 @@ impl Process {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn cmdline_parses() {
+        let pid = std::process::id() as i32;
+        let cmd = cmdline(pid).unwrap();
+        assert_eq!(true, cmd.len() > 1);
+    }
+
+    #[test]
+    fn ppid_parses() {
+        let pid = std::process::id() as i32;
+        let parent = ppid(pid).unwrap();
+        assert_ne!(0, parent);
+    }
+
+    #[test]
+    fn process_inits() {
+        let pid = std::process::id() as i32;
+        let this = Process::new(pid).unwrap();
+        assert_ne!(0, this.ppid);
+        assert_ne!("unknown", this.user());
+    }
+
+    fn dummy_path(exe: &str) -> Process {
+        Process{
+            argv: vec![],
+            pid: 0,
+            ppid: 0,
+            start: Instant::now(),
+            exe: PathBuf::from(exe)
+        }
+    }
+
+    #[test]
+    fn labels() {
+        let t = dummy_path("/usr/bin/dd");
+        assert_eq!("base", t.label());
+
+        let t = dummy_path("/usr/bin/dd-outer");
+        assert_eq!("dd-outer", t.label());
+    }
+}
