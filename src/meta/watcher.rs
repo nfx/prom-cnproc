@@ -47,9 +47,6 @@ impl Watcher {
                 if label == "systemd" {
                     continue;
                 }
-                if label == "python3.8" {
-                    warn!("py> {}", prc.argv.join(" "))
-                }
                 chain.push(label);
             } else {
                 curr = 0

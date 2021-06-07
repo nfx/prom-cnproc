@@ -10,6 +10,50 @@ use std::time::Instant;
 use entropy::metric_entropy;
 use super::known::is_base;
 use log::trace;
+use std::collections::HashSet;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref PYTHONS: HashSet<&'static str> = {
+        let mut pythons = HashSet::new();
+        pythons.insert("/usr/bin/python2.6"); // hello, centOS...
+        pythons.insert("/usr/bin/python2.7");
+        pythons.insert("/usr/bin/python3.0");
+        pythons.insert("/usr/bin/python3.1");
+        pythons.insert("/usr/bin/python3.2");
+        pythons.insert("/usr/bin/python3.3");
+        pythons.insert("/usr/bin/python3.4");
+        pythons.insert("/usr/bin/python3.5");
+        pythons.insert("/usr/bin/python3.6");
+        pythons.insert("/usr/bin/python3.8");
+        pythons.insert("/usr/bin/python3.9");
+        pythons.insert("/usr/bin/python3.10");
+        pythons.insert("/usr/bin/python3.11");
+        pythons
+    };
+    static ref SHELLS: HashSet<&'static str> = {
+        let mut shells = HashSet::new();
+        shells.insert("/usr/bin/bash"); 
+        shells.insert("/bin/bash"); 
+        shells.insert("/usr/bin/chsh"); 
+        shells.insert("/bin/chsh"); 
+        shells.insert("/usr/bin/csh"); 
+        shells.insert("/bin/csh"); 
+        shells.insert("/usr/bin/dash"); 
+        shells.insert("/bin/dash"); 
+        shells.insert("/usr/bin/ksh"); 
+        shells.insert("/bin/ksh"); 
+        shells.insert("/usr/bin/rbash"); 
+        shells.insert("/bin/rbash"); 
+        shells.insert("/usr/bin/sh"); 
+        shells.insert("/bin/sh"); 
+        shells.insert("/usr/bin/tcsh"); 
+        shells.insert("/bin/tcsh"); 
+        shells.insert("/usr/bin/zsh"); 
+        shells.insert("/bin/zsh"); 
+        shells
+    };
+}
 
 #[derive(Debug)]
 pub struct Process {
@@ -17,7 +61,7 @@ pub struct Process {
     pub ppid: i32,
     pub argv: Vec<String>,
     exe: PathBuf,
-    pub start: Instant
+    pub start: Instant,
 }
 
 fn cmdline(pid: i32) -> Result<Vec<String>> {
@@ -55,7 +99,8 @@ impl Process {
     /// Returns minimum metric entropy of any path element
     pub fn entropy(&self) -> f32 {
         let mut path_entropy = std::f32::MAX;
-        let mut elems = self.exe.to_str().unwrap_or("/").split("/");
+        let actual = self.actual_runnable();
+        let mut elems = actual.split("/");
         for chunk in &mut elems {
             let entropy = metric_entropy(chunk.as_bytes());
             trace!("entropy {}={}", chunk, entropy);
@@ -65,18 +110,47 @@ impl Process {
         }
         path_entropy
     }
-    
-    pub fn label(&self) -> &str {
-        if let Some(path) = self.exe.to_str() {
-            if is_base(path) {
-                return "base";
+
+    /// Determines actual runnable file - binary or script
+    fn actual_runnable(&self) -> &str {
+        let sh  = self.is_shell();
+        let py  = self.is_python();
+        let has_args = self.argv.len() > 1;
+        if (sh || py) && has_args {
+            let maybe_script = self.argv[1].as_str();
+            // or should it be just regex?..
+            let path = Path::new(maybe_script);
+            if path.is_file() {
+                return maybe_script;
             }
         }
-        // TODO: more logic for python stuff
-        if let Some(os_str) = self.exe.file_name() {
-            return os_str.to_str().unwrap_or("unknown");
+        self.exe.to_str().unwrap_or("/")
+    }
+
+    fn is_python(&self) -> bool {
+        match self.exe.to_str() {
+            Some(path) => PYTHONS.contains(path),
+            None => false,
         }
-        return "unknown"
+    }
+
+    fn is_shell(&self) -> bool {
+        match self.exe.to_str() {
+            Some(path) => SHELLS.contains(path),
+            None => false,
+        }
+    }
+    
+    /// Determines short label to include in process tree
+    pub fn label(&self) -> &str {
+        let path = self.actual_runnable();
+        if is_base(path) {
+            // base system may have plenty of scripts
+            return "base";
+        }
+        // maybe this will be improved
+        let filename = path.split("/").last().unwrap_or("/");
+        filename
     }
 
     /// Returns owner name of this process
@@ -156,5 +230,22 @@ mod tests {
 
         let t = dummy_path("/tmp/ZW50cm9weQo/any-shady-process");
         assert_eq!(0.20322484, t.entropy());
+    }
+
+    #[test]
+    fn shell_script_label() {
+        let p = Process{
+            pid: 0,
+            ppid: 0,
+            start: Instant::now(),
+            argv: vec![
+                String::from("sh"),
+                String::from("/etc/init.d/hwclock.sh"),
+                String::from("-a"),
+                String::from("-b"),
+            ],
+            exe: PathBuf::from("/bin/bash")
+        };
+        assert_eq!("hwclock.sh", p.label())
     }
 }
