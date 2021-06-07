@@ -20,7 +20,9 @@ metrics = "0.16.0"
 
 [package.metadata.deb]
 maintainer = "Serge Smertin <serg.smertin@gmail.com>"
+maintainer-scripts = "debian/"
 copyright = "2021, Serge Smertin <serg.smertin@gmail.com>"
+systemd-units = { enable = true }
 license-file = ["LICENSE", "2"]
 extended-description = """\
 Simple Prometheus Linux process tree detector"""
@@ -28,5 +30,5 @@ depends = "$auto"
 section = "utility"
 priority = "optional"
 assets = [
-    ["target/release/prom-cnproc", "sbin", "755"],
+    ["target/release/prom-cnproc", "/usr/sbin", "755"],
 ]

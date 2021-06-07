@@ -31,5 +31,5 @@ Building - `cargo build --release`
 
 Releasing:
 
-- `cargo deb --target=aarch64-unknown-linux-gnu	`
+- `cargo deb --target=aarch64-unknown-linux-gnu` (`apt-get install libc6-dev-i386`)
 - `cargo deb --target=x86_64-unknown-linux-gnu`

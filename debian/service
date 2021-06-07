@@ -1,0 +1,8 @@
+[Unit]
+Description=Prometheus Linux Process Tree detector
+
+[Service]
+ExecStart=/usr/sbin/prom-cnproc
+
+[Install]
+WantedBy=multi-user.target
