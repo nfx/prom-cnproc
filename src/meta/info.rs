@@ -145,4 +145,16 @@ mod tests {
         let t = dummy_path("/usr/bin/dd-outer");
         assert_eq!("dd-outer", t.label());
     }
+
+    #[test]
+    fn entropies() {
+        let t = dummy_path("/tmp/target/debug/deps/prom_cnproc-0883569a23a4bd16");
+        assert_eq!(0.15128307, t.entropy());
+
+        let t = dummy_path("/tmp/target/debug/deps/prom_cnproc");
+        assert_eq!(0.24837805, t.entropy());
+
+        let t = dummy_path("/tmp/ZW50cm9weQo/any-shady-process");
+        assert_eq!(0.20322484, t.entropy());
+    }
 }
