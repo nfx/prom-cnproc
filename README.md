@@ -32,7 +32,11 @@ Some practical challenges already solved:
 
 Process has to be run as root, because it seems to be no other way to listen for a corresponding NetLink socket. If there's a way to improve it - i'd be happy to get a pull request to this.
 
-Releasing:
+# Installation:
+
+Download a [release package for your architecture](https://github.com/nfx/prom-cnproc/releases) and install it as `dpkg -i prom-cnproc_0.1.0_amd64.deb`. If you'd be interested in seeing some debug information from the binary, `RUST_LOG=trace` will give you the most of the info. Currently the HTTP server will listen on `localhost:9501` and there's no way to specify it as configuration yet. Once this exporter process is running, point your Prometheus to it.
+
+Whenever you're missing some features (or don't trust the released binaries), please fork & build from source. I've used the following release commands:
 
 - `apt-get install libc6-dev-i386`
 - `cargo install cargo-deb`
