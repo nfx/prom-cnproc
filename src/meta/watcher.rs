@@ -5,6 +5,7 @@ use metrics_exporter_prometheus::PrometheusBuilder;
 use super::info::Process;
 use std::io::Result;
 use metrics::{gauge, histogram};
+use std::net::SocketAddr;
 
 
 #[cfg(target_os = "linux")]
@@ -17,8 +18,6 @@ pub struct Watcher {
 fn tree(pids: &HashMap<i32,Process>, pid: i32) -> String {
     let mut curr = pid;
     let mut tree = vec![];
-    let mut pos = 0;
-    let mut sshd_pos = std::usize::MAX;
     // tree entropy is minumum entropy of any paths of binaries executed in this process tree
     let mut tree_entropy = std::f32::MAX;
 
@@ -39,12 +38,7 @@ fn tree(pids: &HashMap<i32,Process>, pid: i32) -> String {
             if label == "systemd" {
                 continue;
             }
-            if label == "sshd" {
-                // save the position of SSH process
-                sshd_pos = pos;
-            }
             tree.push(label);
-            pos = pos + 1;
         } else {
             curr = 0
         }
@@ -53,14 +47,6 @@ fn tree(pids: &HashMap<i32,Process>, pid: i32) -> String {
         // random prefix means that folder with binary was in random location
         tree.push("random");
     }
-    let mut ssh_prefix = "ssh:".to_owned();
-    if sshd_pos < std::usize::MAX {
-        let username = pids.get(&pid).map(Process::user).unwrap_or("unknown");
-        if let Some(x) = tree.get_mut(sshd_pos) {
-            ssh_prefix.push_str(username);
-            *x = &ssh_prefix;
-        }
-    }
     tree.reverse();
     
     return format!("/{}", tree.join("/"));
@@ -68,8 +54,13 @@ fn tree(pids: &HashMap<i32,Process>, pid: i32) -> String {
 
 impl Watcher {
     pub fn new() -> Result<Self> { 
+        let addr = "127.0.0.1:9501";
+        let addr: SocketAddr = addr
+            .parse()
+            .expect("Unable to parse socket address");
         let monitor = PidMonitor::new()?;
-        let builder = PrometheusBuilder::new();
+        let builder = PrometheusBuilder::new()
+            .listen_address(addr);
         builder.install().expect("failed to install Prometheus recorder.");
         Ok(Self{monitor, pids: HashMap::new()})
     }
@@ -104,8 +95,8 @@ impl Watcher {
             // don't trigger for before unknown processes
             return;
         }
-        let prc = self.pids.remove(&pid).unwrap();
         let tree = tree(&self.pids, pid);
+        let prc = self.pids.remove(&pid).unwrap();
         let elapsed = prc.start.elapsed();
         let seconds = elapsed.as_secs_f64();
 
@@ -148,6 +139,6 @@ mod tests {
         let t = tree(&pids, 3);
 
         // unknown is the default username for pid "2", that is not likely to exist
-        assert_eq!("/base/ssh:unknown/hwclock.sh", t)
+        assert_eq!("/base/sshd/hwclock.sh", t)
     }
 }

@@ -30,5 +30,5 @@ depends = "$auto"
 section = "utility"
 priority = "optional"
 assets = [
-    ["target/release/prom-cnproc", "/usr/sbin", "755"],
+    ["target/release/prom-cnproc", "/usr/sbin/prom-cnproc", "755"],
 ]

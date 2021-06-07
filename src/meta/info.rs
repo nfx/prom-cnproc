@@ -159,6 +159,7 @@ impl Process {
     }
 
     /// Returns owner name of this process
+    #[allow(dead_code)]
     pub fn user(&self) -> &str {
         let default = "unknown";
         let path = &format!("/proc/{}", self.pid);
